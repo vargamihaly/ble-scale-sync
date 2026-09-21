@@ -7,6 +7,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from garminconnect import Garmin
 
+from garmin_errors import format_error_chain
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -70,25 +72,6 @@ def login_fresh(garmin):
     finally:
         if saved is not None:
             os.environ["GARMINTOKENS"] = saved
-
-
-def format_error_chain(exc):
-    """Render an exception together with the causes chained behind it.
-
-    garminconnect wraps the real failure: the surface message is often
-    "Failed to retrieve social profile" while the cause carries the status
-    code that explains it (401 rejected token, 429 rate limit, 403 bot
-    challenge). Printing only str(exc) hid that and sent people chasing
-    IP blocks that were not the problem.
-    """
-    parts = [f"{exc}"]
-    seen = {id(exc)}
-    cause = exc.__cause__ or exc.__context__
-    while cause is not None and id(cause) not in seen:
-        seen.add(id(cause))
-        parts.append(f"  caused by: {type(cause).__name__}: {cause}")
-        cause = cause.__cause__ or cause.__context__
-    return "\n".join(parts)
 
 
 def resolve_env_ref(value):

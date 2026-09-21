@@ -122,44 +122,5 @@ class AuthenticateTest(unittest.TestCase):
         self.assertIn("API Error 401", output)
 
 
-class FormatErrorChainTest(unittest.TestCase):
-    def test_renders_a_bare_exception(self):
-        self.assertEqual(setup_garmin.format_error_chain(ValueError("nope")), "nope")
-
-    def test_appends_an_explicit_cause(self):
-        try:
-            try:
-                raise ConnectionError("API Error 401")
-            except ConnectionError as inner:
-                raise RuntimeError("Failed to retrieve social profile") from inner
-        except RuntimeError as outer:
-            rendered = setup_garmin.format_error_chain(outer)
-
-        self.assertIn("Failed to retrieve social profile", rendered)
-        self.assertIn("caused by: ConnectionError: API Error 401", rendered)
-
-    def test_appends_an_implicit_context(self):
-        try:
-            try:
-                raise ConnectionError("API Error 401")
-            except ConnectionError:
-                raise RuntimeError("wrapped")
-        except RuntimeError as outer:
-            rendered = setup_garmin.format_error_chain(outer)
-
-        self.assertIn("caused by: ConnectionError: API Error 401", rendered)
-
-    def test_terminates_on_a_self_referential_chain(self):
-        looped = RuntimeError("outer")
-        inner = RuntimeError("inner")
-        looped.__cause__ = inner
-        inner.__cause__ = looped
-
-        rendered = setup_garmin.format_error_chain(looped)
-
-        self.assertIn("caused by: RuntimeError: inner", rendered)
-        self.assertEqual(rendered.count("caused by:"), 1)
-
-
 if __name__ == "__main__":
     unittest.main()
